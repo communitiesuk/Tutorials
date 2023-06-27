@@ -92,7 +92,7 @@ Pressing "Done" should cause a little loading, and then a column full of records
 
  and then expand the column of attributes to get all of the columns. Deselect the "Use original column name as prefix", as this only muddies up the names, with no benefit to us here. 
 
- [!Image showing Column Expansion menu](./img/la_mp_tut_pq_second_column.jpg).
+ ![Image showing Column Expansion menu](./img/la_mp_tut_pq_second_column.jpg).
 
  We still have too many columns though, as each constituency shows up once for each ward. Select the first four columns by licking the first column heading, and shift-clicking the fourth (this should select the columns with the ONS codes and names of the constituencies and Lower tier LAs). Then in the "Home" tab select "Remove Rows" and "Remove Duplicates".
 
