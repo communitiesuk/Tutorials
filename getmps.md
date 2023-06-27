@@ -104,7 +104,7 @@ Pressing "Done" should cause a little loading, and then a column full of records
 
  This is much simpler. Here we use the same get data from web feature in Excel ![Excel get data from web icon](./img/la_mp_tut_from_web_icon.jpg), and this time use the direct link to the csv from theyworkforyou [https://www.theyworkforyou.com/mps/?f=csv](https://www.theyworkforyou.com/mps/?f=csv), however this time the default settings work fine, and we can simply import the sheet. 
 
- To make our life a bit easier, we can rename this query (probably called `f=csv`) by going to "Queries & Connections" in the "Data" tab, right-clicking the query, and renaming it (I called it `)
+ To make our life a bit easier, we can rename this query (probably called `f=csv`) by going to "Queries & Connections" in the "Data" tab, right-clicking the query, and renaming it (I called it `mp_constituencies`)
 
  ## Matching the data
 
