@@ -125,4 +125,4 @@ in K2.
 
 (Yes it's not `INDEX/MATCH` and it doesn't work in old versions of Excel, but it'll do.)
 
-Now you have a nice rectabngle of all of the MPs and which LA they're in. You can update it at any time by going to the "Data" tab and pressing "Refresh All".
+Now you have a nice rectangle of all of the MPs and which LA they're in. You can update it at any time by going to the "Data" tab and pressing "Refresh All".
