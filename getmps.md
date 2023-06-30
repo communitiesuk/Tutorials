@@ -54,7 +54,7 @@ We therefore want to repeatedly request the next 1000 entries by increasing the 
 
 <details>
     <summary>
-## Doing this in Excel
+Doing this in Excel
     </summary>
 
 In Excel/PowerBI we can do this using PowerQuery. Again, there are better ways to do this in R and Python. 
@@ -133,7 +133,7 @@ Now you have a nice rectangle of all of the MPs and which LA they're in. You can
 
 <details>
 <summary>
-## Doing this in R
+Doing this in R
 </summary>
 
 There is a sample script for doing this [here](./sample%20code/R/getmps.R). 
