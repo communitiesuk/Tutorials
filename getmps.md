@@ -52,7 +52,10 @@ We can change the results we recieve by adding in a `resultOffset` query, which,
 
 We therefore want to repeatedly request the next 1000 entries by increasing the `resultOffset`, and stick them all together into a single large JSON object which we can then process. 
 
-### Doing this in Excel
+<details>
+    <summary>
+Doing this in Excel
+    </summary>
 
 In Excel/PowerBI we can do this using PowerQuery. Again, there are better ways to do this in R and Python. 
 
@@ -64,7 +67,7 @@ Here we disregard all of the buttons trying to help us, and open the Advanced Ed
 
 We can then replace the code in the box (which will only download one page), with some to download all of the pages:
 
-```
+``` M
 let
     BaseURL = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD22_PCON22_LAD22_UTLA22_UK_LU/FeatureServer/0/query?where=1%3D1&outFields=PCON22CD,PCON22NM,LAD22CD,LAD22NM,UTLA22CD,UTLA22NM&outSR=4326&f=json", //Change this URL to your own
     EntitiesPerPage = 1000, // This is fixed by the server
@@ -126,3 +129,106 @@ in K2.
 (Yes it's not `INDEX/MATCH` and it doesn't work in old versions of Excel, but it'll do.)
 
 Now you have a nice rectangle of all of the MPs and which LA they're in. You can update it at any time by going to the "Data" tab and pressing "Refresh All".
+</details>
+
+<details>
+<summary>
+Doing this in R
+</summary>
+
+There is a sample script for doing this [here](./sample%20code/R/getmps.R). 
+
+We're going to use the `httr` and `jsonlite` packages to download the data. Unfortunately, R doesn't have a standard method of reading JSON (and thus APIs), and different packages handle JSON quite in incompatible ways. Just be aware that if you're using another JSON parser (say `rjson` or `tidyjson`), they can behave quite differently.
+
+`httr` allows us to separate the query part of the API (everything after `?`) into a list and manipulate it separately, and so we can define our urls and queries at the top (remember to change out the arcgis link if there is a new one)
+
+``` R
+mp_data_loc <- "https://www.theyworkforyou.com/mps/?f=csv"
+la_data_loc <- "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD22_PCON22_LAD22_UTLA22_UK_LU/FeatureServer/0/query"
+la_data_query <- list(where = "1=1",
+                    outFields = "PCON22CD,PCON22NM,LAD22CD,LAD22NM,UTLA22CD,UTLA22NM",
+                    outSR = "4326",
+                    f = "json")
+```
+
+Reading the MP data is simple, and can just be done using `read.csv` on the link. There are two columns we don't want though, the `Person ID` and the `URI` and so we can remove them. 
+
+``` R
+mp_list <- subset(read.csv(mp_data_loc), select = -c(Person.ID, URI))
+```
+
+For the LA data, we can use `httr` to gain a single page of results with `GET`. `res <- GET(la_data_loc, la_dataquery)` will get the first 1000 lines, however if you try to read it (using `res$content`) you will just get a load of numbers. The result is returned as raw data, and so we need to convert it to strings using `rawToChar(res)`. We can then use `jsonlite` to convert the JSON string to a dataframe. 
+
+JSON is not a rectangular data structure (it's a tree, like XML), and so we need to flatten it in order to get it to work properly in a dataframe. Luckily the data here is already basically a rectangle, and so we can just use `fromJSON`'s `flatten = TRUE` argument, however with more complex datasets there can be quite a lot of wrangling. Even here, we still only want the `features` of the data (the rest is used when dealing with map data from this API, but we don't have that here luckily. More generally you will need to look at the JSON coming out of your API to work out where the data you want is. If it's not confidential, tools like [JSONviewer](https://jsonviewer.stack.hu/) can really help with this). 
+
+We can get a page of results back starting at result `x` with the function
+
+``` R
+get_starting_at_x <- function(x, url, query) {
+    query_with_offset <- c(query, list(resultOffset = as.character(x)))
+    res <- GET(url, query = query_with_offset)
+    # each JSON record holds a lot of data, but we only want the "features"
+    features <- fromJSON(rawToChar(res$content), flatten = TRUE)$features
+    return(features)
+}
+```
+
+Notice that the first argument is the starting result number. This is because we're going to be repeatedly calling this function with different starting numbers, and we can use `lapply` to do this if the variable we want to change is the first argument.
+
+We want to call the function with `x` being every multiple of 1000 between 0 and 9000, and so we can generate this list using `(seq_len(10) - 1) * 1000` (sequences in R always betwen at 1, so we subtract 1 from every term in the sequence to get what we want). To get a more general function, we can define `entities_per_page` and `max_entities` at the top, and then we get `(seq_len(max_entities / entities_per_page) - 1) * 1000`.
+
+We want to run `get_starting_at_x` for every entry in our sequence, and this is what `lapply(list, f)` is for. It takes every item in the list, and runs the function `f` with that item as the first argument. Then it returns a list with the corresponding outputs of `f` for every item in the original list.
+
+Our function takes two more arguments, `url` and `query`, but we can put them after the function and they will be added in every time. (They won't be stepped through though. For that we would need to use `mapply` or `purr::pmap`). 
+
+``` R
+entities_per_page <- 1000
+max_entities <- 10000
+
+lapply(
+    seq_len(max_entities / entities_per_page) - 1) * 1000,
+    get_starting_at_x,
+    url = la_data_loc,
+    query = la_data_query
+    )
+)
+```
+This gives us a list of dataframes, one for each page. Because they all have the same columns in, we can combine them together using `rbind`. Unfortunately `rbind` doesn't like its arguments to be in a list, but we can fix this by using `do.call()`. This is a very base R approach, and in tidyverse, `do.call("rbind", )` has been replaced by `bind_rows()`.
+
+Looking at the data, many of the rows appear multiple times. This is because the data is actually by ward, we simply didn't ask the API for the ward columns. We only want unique, rows, and thus we can use `unique()` to remove repeats, giving us
+
+``` R
+entities_per_page <- 1000
+max_entities <- 10000
+
+local_authorities_const <- unique(
+    do.call("rbind" 
+        lapply( 
+            (seq_len(max_entities / entities_per_page) - 1) * 1000,
+            get_starting_at_x,
+            url = la_data_loc,
+            query = la_data_query
+        )
+    )
+)
+```
+
+This is good, but because of the JSON flattening, every columnname starts with "attributes.". Rather than doing anything complicated, we can simply remove the first 11 characters of every name (`substr` requires that you have an end to the section of string you want to cut out, so we set it to a figure much longer than all of the strings to ensure that it doesn't remove anything unwanted.)
+
+``` R
+names(local_authorities_const) <- substr(names(local_authorities_const), 12, 1000)>
+```
+
+Lastly we want to join our local authorities data to the mp data. Here we use the base R function `merge`, but the tidyverse function `left_join` does the same thing in a more predictable manner if you are using tidyverse.
+
+``` R
+la_with_mp <- merge(local_authorities_const,
+                mp_list,
+                all.x = TRUE,
+                by.x = "PCON22NM",
+                by.y = "Constituency")
+```
+
+(Here `all.x = TRUE` is what makes it a left join. The default for `merge` is an inner join, which is rarely what you want)
+
+</details>
