@@ -26,7 +26,7 @@ get_starting_at_x <- function(x, url, query) {
 
 # unique removes duplicate rows for multiple wards
 local_authorities_const <- unique(
-    bind_rows( # combine pages together
+    do.call("rbind", # combine pages together
         lapply( # loop through all pages
             (seq_len(max_entities / entities_per_page) - 1) * 1000,
             get_starting_at_x,
@@ -37,7 +37,7 @@ local_authorities_const <- unique(
 )
 
 # Remove 'attributes.' prefix from names
-names(local_authorities_const) <- substr(names(a), 12, 1000)
+names(local_authorities_const) <- substr(names(local_authorities_const), 12, 1000)
 
 la_with_mp <- merge(local_authorities_const,
                 mp_list,

@@ -67,7 +67,7 @@ Here we disregard all of the buttons trying to help us, and open the Advanced Ed
 
 We can then replace the code in the box (which will only download one page), with some to download all of the pages:
 
-``` VBA
+``` M
 let
     BaseURL = "https://services1.arcgis.com/ESMARspQHYMw9BZ9/arcgis/rest/services/WD22_PCON22_LAD22_UTLA22_UK_LU/FeatureServer/0/query?where=1%3D1&outFields=PCON22CD,PCON22NM,LAD22CD,LAD22NM,UTLA22CD,UTLA22NM&outSR=4326&f=json", //Change this URL to your own
     EntitiesPerPage = 1000, // This is fixed by the server
@@ -193,7 +193,7 @@ lapply(
     )
 )
 ```
-This gives us a list of dataframes, one for each page. Because they all have the same columns in, we can combine them together using `bind_rows`.
+This gives us a list of dataframes, one for each page. Because they all have the same columns in, we can combine them together using `rbind`. Unfortunately `rbind` doesn't like its arguments to be in a list, but we can fix this by using `do.call()`. This is a very base R approach, and in tidyverse, `do.call("rbind", )` has been replaced by `bind_rows()`.
 
 Looking at the data, many of the rows appear multiple times. This is because the data is actually by ward, we simply didn't ask the API for the ward columns. We only want unique, rows, and thus we can use `unique()` to remove repeats, giving us
 
@@ -202,7 +202,7 @@ entities_per_page <- 1000
 max_entities <- 10000
 
 local_authorities_const <- unique(
-    bind_rows( 
+    do.call("rbind" 
         lapply( 
             (seq_len(max_entities / entities_per_page) - 1) * 1000,
             get_starting_at_x,
@@ -216,7 +216,7 @@ local_authorities_const <- unique(
 This is good, but because of the JSON flattening, every columnname starts with "attributes.". Rather than doing anything complicated, we can simply remove the first 11 characters of every name (`substr` requires that you have an end to the section of string you want to cut out, so we set it to a figure much longer than all of the strings to ensure that it doesn't remove anything unwanted.)
 
 ``` R
-names(local_authorities_const) <- substr(names(a), 12, 1000)>
+names(local_authorities_const) <- substr(names(local_authorities_const), 12, 1000)>
 ```
 
 Lastly we want to join our local authorities data to the mp data. Here we use the base R function `merge`, but the tidyverse function `left_join` does the same thing in a more predictable manner if you are using tidyverse.
