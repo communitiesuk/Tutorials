@@ -1,6 +1,6 @@
 # Finding MPs for each LA using the ONS API
 
-Because I am lazy and I needed the data in Excel, this tutorial covers how to use PowerQuery to download the data (so also appliccable to PowerBI). If you want to use R or Python you will need to find a RESTive API package that deals with panigation. It will probably be a lot easier :)
+This covers finding the data using PowerQuery (Excel or PowerBI) or R. Both of these are actually pretty bad at manipulating APIs, and so this is much more complicated than it might be in other languages *cough*Python*cough*, but they're our most popular tools.
 
 ## Data Sources
 
@@ -186,12 +186,12 @@ entities_per_page <- 1000
 max_entities <- 10000
 
 lapply(
-    seq_len(max_entities / entities_per_page) - 1) * 1000,
+    (seq_len(max_entities / entities_per_page) - 1) * 1000,
     get_starting_at_x,
     url = la_data_loc,
     query = la_data_query
     )
-)
+
 ```
 This gives us a list of dataframes, one for each page. Because they all have the same columns in, we can combine them together using `rbind`. Unfortunately `rbind` doesn't like its arguments to be in a list, but we can fix this by using `do.call()`. This is a very base R approach, and in tidyverse, `do.call("rbind", )` has been replaced by `bind_rows()`.
 
