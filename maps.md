@@ -354,7 +354,7 @@ two_insets
 
 # Saving the map
 
-We can save our map to fie using ggsave. To prevent everything from
+We can save our map to file using ggsave. To prevent everything from
 breaking, we set the DPI to an acceptable print quality. This also stops
 all of the insets from moving around.
 
