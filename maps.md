@@ -38,7 +38,6 @@ the zip into your target directory. (You do want all of them, `shp`
 files store their metadata in separate files)
 </details>
 
-
 Here we’ll use a file downloaded from Geoportal containing all of the
 districts and unitaries from 2023.
 
@@ -57,7 +56,11 @@ la_boundaries <- st_read(shp_boundaries)
 Sf objects are based on dataframes, and so we can use most of the normal
 data wrangling functions in R. If we examine the data:
 
-    colnames(la_boundaries)
+``` r
+print(colnames(la_boundaries))
+```
+
+    ## [1] "LAD23CD"  "LAD23NM"  "LAD23NMW" "BNG_E"    "BNG_N"    "LONG"     "LAT"      "GlobalID" "geometry"
 
 We can see that the data comes with names, (`LAD23NM`) ONS Codes
 (`LAD23CD`) as well as names in Welsh for Welsh areas (`LAD23NMW`), a
@@ -177,7 +180,9 @@ palette of length 3 going from white to black.
 
 Remember that it needs to be the same length as the number of buckets
 you have or you will get an error.
-<details>
+</details>
+
+Finally, we’re ready to make the map.
 
 # Generate the big map
 
@@ -267,6 +272,11 @@ area. This can make for quite a frustrating time placing it as it can be
 difficult to work out exactly how large it will be and effect changing
 the dimensions can have.
 
+This also means that it will render the images differently if you are
+rendering them to different sizes, (e.g. if you’re making them in an
+rmarkdown document, so be sure to check that whatever you have selected
+works in your chosen output format. )
+
 ``` r
 p3 <- p +
   annotation_custom(grob = p_grob_london,
@@ -313,7 +323,8 @@ p_grob_shetland <- ggplotGrob(p_zoom_shetland)
 
 
 # Remove Shetland from the large map
-p_no_shetland <- ggplot(la_data_classes |> filter(ONSCode != "S12000027"), aes(geometry = geometry, fill = info_class)) +
+p_no_shetland <- ggplot(la_data_classes |> 
+        filter(ONSCode != "S12000027"), aes(geometry = geometry, fill = info_class)) +
   geom_sf(alpha = 0.8,
           colour = 'black',
           size = 0.3) +
@@ -341,8 +352,22 @@ two_insets
 
 ![](img/maps/shetland-1.png)<!-- -->
 
-\<!– Also to add - \# Using Leaflet \# Adding backgrounds from
-Openmapwhetever
+# Saving the map
+
+We can save our map to fie using ggsave. To prevent everything from
+breaking, we set the DPI to an acceptable print quality. This also stops
+all of the insets from moving around.
+
+``` r
+ggsave("map_with_shetland.jpg", plot=two_insets, dpi=300)
+```
+
+    ## Saving 7 x 5 in image
+
+<!-- Also to add - 
+# Using Leaflet
+# Adding backgrounds from Openmapwhetever
+-->
 
 [^1]: In this example it doesn’t actually matter too much, but some
     functions are expecting `sf` objects, which can create some very
