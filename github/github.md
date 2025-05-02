@@ -1,4 +1,4 @@
-# General LPA Github info
+# General Github info
 
 ## Adding someone to the team
 
